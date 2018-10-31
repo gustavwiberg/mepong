@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style type="text/css">
+            #canvas {border:1px solid #000;}
+            #playerwrapper {width:500px;font-size:1em;}
+            .playerwrapper {}
+            .right {float:right;}
+            .left {float:left;}
+            #player1, #player2 {font-weight:bold;}
+        </style>
+        <script type="text/javascript">
+        'use strict';
+            var graphic, canvas, allshapes = [];   
+            var rqi; //Used for request animation frame
+            var stop_game = false;
+
+            class Shape {
+                constructor(col='#000000', x=0,y=0,lx=5,ly=5,width=10,height=10) {
+                    this.col = col;
+                    this.x = x;
+                    this.y = y;
+                    this.lx = lx;
+                    this.ly = ly;
+                    this.width = width;
+                    this.height = height;
+                    this.gravity = 0;
+                    this.friction = 0;
+                }          
+                
+
+                //Returns boolean value true when this circle is colliding with another square, else false.
+                circlesquare_collision(obj_circle, obj_rect) {
+                    var half_recheight = obj_rect.height/2;
+                    var half_recwidth = obj_rect.width/2;
+                    var dist_x = Math.abs(obj_circle.x - obj_rect.x - half_recwidth);
+                    var dist_y = Math.abs(obj_circle.y - obj_rect.y - half_recheight);                                
+                    var radius = obj_circle.width/2;
+
+                    if (dist_x > (half_recwidth + radius)) {
+                        return false;
+                    }
+                    if (dist_y > (half_recheight + radius)) {
+                        return false;
+                    }
+
+                    if (dist_x <= (half_recwidth)) {
+                        return true;
+                    }
+                    if (dist_y < (half_recheight)) {
+                        return true;
+                    }
+
+                    var dx=dist_x-half_recwidth;
+                    var dy=dist_y-half_recheight;
+                    
+
+                    if ((dx*dx)+(dy*dy)<=(radius*radius) == true) {
+                        return true;
+                    }         
+                    return false;
+                }
+                
+                //returns boolean value true when this circle is colliding with another square, else false.
+                circlecircle_collision(obj_circle1, obj_circle2) {
+                    var dx = obj_circle1.x - obj_circle2.x;
+                    var dy = obj_circle1.y - obj_circle2.y;
+                    var radius1 = obj_circle2.width/2;
+                    var radius2 = obj_circle1.width/2;                            
+                    var radii = radius1 + radius2;
+
+                    //If the distance are smaller the total radius then
+                    //it's a collision
+                    if ( (( dx * dx )  + ( dy * dy )) < (radii * radii) ) {
+                        return true;
+                    }        
+                    
+                    return false;
+                }
+                
+                //Returns boolean value true when this square is colliding with another square, else false.
+                squaresquare_collision(obj_rect1, obj_rect2) {
+                    var top,right,bottom,left;
+                    top = (obj_rect1.y+obj_rect1.height)>obj_rect2.y;
+                    right = obj_rect1.x<(obj_rect2.x+obj_rect2.width);
+                    bottom = obj_rect1.y<(obj_rect2.y+obj_rect2.height);
+                    left = (obj_rect1.x+obj_rect1.width)>obj_rect2.x;
+                    if (left && right && top && bottom) {                                                             
+                        return true;
+                    }                    
+                    
+                    return false;
+                }
+            }
+
+            class Square extends Shape {                
+                draw_object(currentshape) {
+                    graphic.fillStyle= currentshape.col;
+                    graphic.fillRect(currentshape.x,currentshape.y,currentshape.width,currentshape.height);                    
+                }
+                
+                move() { 
+                    this.x+=this.lx;
+                    this.y+=this.ly;       
+                    this.ly+=this.gravity;                     
+                    this.collision_react();
+
+                    if (this.x <=0 || (this.x+this.width>=canvas.width)) {
+                        this.lx = -this.lx*(1-this.friction);
+                    }
+                    if (this.y<=0 || (this.y+this.height>=canvas.height)) {
+                        this.ly = -this.ly*(1-this.friction);
+                    }   
+                    
+                }
+                
+                collision_react() {
+                    var obj;
+                    for(var i=0;i<allshapes.length;i++) {
+                        obj = allshapes[i];
+                        if (this == obj) {break;}
+                                                
+                        //This square collides with another square
+                        if (obj instanceof Square) {
+                            if (this.squaresquare_collision(this,obj) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                obj.lx = -obj.lx*(1-this.friction);
+                                obj.ly = -obj.ly*(1-this.friction);
+                                return true;                                
+                            }
+                        }
+                        
+                        //This square collides with another circle
+                        if (obj instanceof Circle) {                        
+                            if (this.circlesquare_collision(obj, this) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                
+                                obj.lx = -obj.lx*(1-this.friction);
+                                obj.ly = -obj.ly*(1-this.friction);
+                                return true;
+                            }
+                        }
+                           
+                       
+                    }
+                    return false;
+                }
+                
+            }
+            
+
+            
+            class Circle extends Shape {
+                draw_object(currentshape) {
+                    graphic.fillStyle= currentshape.col;
+                    graphic.beginPath();
+                    graphic.arc(currentshape.x,currentshape.y,(currentshape.width/2),0,2*Math.PI);
+                    graphic.fill();
+                }
+                
+                move() { 
+                    this.x+=this.lx;
+                    this.y+=this.ly; 
+                    this.ly+=this.gravity;                    
+                    this.collision_react();
+
+                    if ((this.x)-(this.width/2)<=0 || (this.x)>canvas.width-(this.width/2)) {                        
+                        this.lx = -this.lx*(1-this.friction);
+                    }
+
+                    if ((this.y)-(this.width/2)-Math.abs(this.ly)<=0 || (this.y)+(this.width/2)+Math.abs(this.ly*(1-this.friction))>canvas.height) {
+                        this.ly = -this.ly*(1-this.friction);                
+                    }    
+                    
+                }      
+
+                
+                collision_react() {
+                    var obj;
+                    for(var i=0;i<allshapes.length;i++) {
+                        obj = allshapes[i];
+                        if (this == obj) {break;}
+                                          
+                        if (obj instanceof Circle) {
+                            if (this.circlecircle_collision(this,obj) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                obj.lx = -obj.lx*(1-this.friction);
+                                obj.ly = -obj.ly*(1-this.friction);
+                                return true;                              
+                            }
+                        }
+                        
+                        if (obj instanceof Square) {
+                            if (this.circlesquare_collision(this, obj) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                obj.lx = -obj.lx*(1-this.friction);
+                                 obj.ly = -obj.ly*(1-this.friction);
+                                return true;
+                            }                            
+                        }
+                        
+                        
+                    }
+                    return false;
+                }        
+            }
+            
+            class Player extends Shape { 
+                constructor(col='#000000', x=0,y=0,lx=1,ly=0,width=10,height=10, player_upchar = 'w', player_downchar = 's', player_name = '') {
+                    super();
+                    this.col = col;
+                    this.x = x;
+                    this.y = y;
+                    this.lx = lx;
+                    this.ly = ly;
+                    this.width = width;
+                    this.height = height;
+                    this.gravity = 0;
+                    this.friction = 0;
+                    this.score = 0;
+                    this.key_state = [false, false];
+                    this.upchar = player_upchar;
+                    this.downchar = player_downchar;
+                    this.playername = player_name;
+                    var player_obj = this;
+
+                    document.body.addEventListener('keydown',function(e) {
+                        var lowerkeyc = e.key.toLowerCase();
+                        if (lowerkeyc == player_obj.upchar && player_obj.key_state[0] === false) {
+                            player_obj.key_state[0] = true;  
+                        }
+                        if (lowerkeyc == player_obj.downchar && player_obj.key_state[1] === false) {
+                            player_obj.key_state[1] = true;
+                        }
+                    },true);
+
+                    document.body.addEventListener('keyup',function(e) {                   
+                        var lowerkeyc = e.key.toLowerCase();
+                        if (lowerkeyc == player_obj.upchar && player_obj.key_state[0] === true) {
+                            player_obj.key_state[0] = false;
+                            this.lx = 1;
+                        }
+                        if (lowerkeyc == player_obj.downchar && player_obj.key_state[1] === true) {
+                            player_obj.key_state[1] = false;
+                            this.lx = 1;
+                        }
+                    },true);
+                }
+                    
+                draw_object(currentshape) {
+                    graphic.fillStyle= currentshape.col;
+                    graphic.fillRect(currentshape.x,currentshape.y,currentshape.width,currentshape.height);                    
+                }
+                
+                move() {                  
+                    this.collision_react();
+                    
+                    if (this.key_state[0] === true) {
+                        this.y-=this.ly;
+                        this.ly+=0.05;
+                    }
+                    if (this.key_state[1] === true) {
+                        this.y+=this.ly;
+                        this.ly+=0.05;
+                    }
+                    
+                    if (this.y <=0) {
+                        this.y = 0;
+                    }
+                    if (this.y+this.height>=canvas.height) {
+                        this.y = canvas.height-this.height;
+                    }  
+
+                }
+                
+                collision_react() {
+                   
+                    var obj;
+                    for(var i=0;i<allshapes.length;i++) {
+                        obj = allshapes[i];
+                        if (this == obj) {break;}
+                                                
+                        //This square collides with another square
+                        if (obj instanceof Square) {                            
+                            if (this.squaresquare_collision(this,obj) === true) {
+                                if (obj.col == '#FF0000') {                                    
+                                    document.getElementById('playerwrapper').innerHTML = '<strong>GAME OVER</strong>';
+                                    cancelAnimationFrame(rqi);
+                                }
+                                else {
+                                    obj.ly = -(obj.ly);
+                                    obj.lx = -(obj.lx);                                    
+                                    stop_game = true;
+                                }
+                                return true;                                
+                            }
+                        }
+                        
+                        //This square collides with another circle
+                        if (obj instanceof Circle) {                        
+                            if (this.circlesquare_collision(obj, this) === true) {                                    
+                                if ( (obj.y+(obj.height/2)) < this.y+(this.height/2) ) {
+                                    obj.ly = -Math.abs(obj.ly);
+                                }
+                                else {
+                                    obj.ly = Math.abs(obj.ly);
+                                }
+
+                                obj.lx = -(obj.lx);
+                                this.score+=10;
+                                if (this.playername == 'player1') {
+                                        document.getElementById('player1').innerHTML = this.score;
+                                }
+                                if (this.playername == 'player2') {
+                                    document.getElementById('player2').innerHTML = this.score;
+                                }
+                                return true;
+                            }
+                        }
+                           
+                       
+                    }
+                    return false;
+                }
+                
+            }                
+
+            function game_loop() {               
+                //Initilalize graphics
+                canvas = document.getElementById('canvas');
+                graphic = canvas.getContext('2d');
+                
+                allshapes.push( new Circle('#00FA00',canvas.height/2, canvas.width/2,2 , 2, 10,10));
+
+                var player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,100, 'w','s', 'player1');
+                allshapes.push( player1 );
+
+                var player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,100, 'p','l', 'player2');
+                allshapes.push( player2 );
+                
+                //Create the actual gameloop
+                game_loop = function() {                       
+                   graphic.clearRect(0, 0, canvas.width, canvas.height);
+                   for(var i=0;i<allshapes.length;i++) {
+                        var currentshape = allshapes[i];
+                        currentshape.move();                           
+                        currentshape.draw_object(currentshape);                                                     
+                    }                  
+                    if (stop_game === false) {
+                        rqi = requestAnimationFrame(game_loop);
+                    }
+               }
+               //Start game_loop
+               game_loop();
+              
+            }
+            
+        </script>
+    </head>
+    <body onload="game_loop();">
+        <h1>Mepong</h1>      
+        <div id="playerwrapper">
+                <span class="playerwrapper right">Poäng: <span id="player2">0</span></span>        
+                <span class="playerwrapper left">Poäng: <span id="player1">0</span></span>        
+        </div>
+        <canvas id="canvas" width="500" height="400"></canvas>
+    </body>
+</html>
