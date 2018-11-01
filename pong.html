@@ -10,14 +10,15 @@
             .right {float:right;}
             .left {float:left;}
             #player1, #player2 {font-weight:bold;font-size:2em;}
-            #memory-part {margin-left:50px;position:relative;float:left;width:300px;height:100px;outline:10px solid black;}
-            #memory-part img {position:relative;float:left;width:100px;height:100%;outline:1px solid black;}
+            #memory-part {margin-left:50px;position:relative;float:left;width:360px;height:100px;}
+            #memory-part img {position:relative;padding:0 10px;float:left;width:100px;height:100%;}
+            #user-images {}
         </style>
         <script type="text/javascript">
             'use strict';
             var graphic, canvas, allshapes = [];   
             var rqi; //Used for request animation frame
-            var stop_game = false;
+            var stop_game = true;
             var player1 = 0, player2 = 0;
             
 
@@ -387,6 +388,22 @@
                 player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,50, 'p','l', 'player2');
                 allshapes.push( player2 );
                 
+                
+
+                //Get all images to change to random pic                
+                var all_random_pic = document.getElementsByClassName('randompic');
+                for(var i=0;i<all_random_pic.length;i++) {
+                    //Random between 1-10
+                    var min = 1;
+                    var max = 10;
+                    var random_pic = Math.floor(Math.random() * (max - min)) + min; 
+
+                    var p = all_random_pic[i];
+                    p.setAttribute('src', 'pic' + random_pic + '.jpeg');
+                };
+                
+
+                
                 //Create the actual gameloop
                 game_loop = function() {                       
                    graphic.clearRect(0, 0, canvas.width, canvas.height);
@@ -414,9 +431,15 @@
         </div>
         <canvas id="canvas" width="500" height="400"></canvas>
         <div id="memory-part">
-            <img src="test.png" alt="">
-            <img src="test.png" alt="">
-            <img src="test.png" alt="">
+            <img class="randompic" src=" alt="">
+            <img class="randompic" src="" alt="">
+            <img class="randompic" src="" alt="">
+        </div>
+
+        <div id="user-images">
+            <img class="userpic" src="" alt="">
+            <img class="userpic" src="" alt="">
+            <img class="userpic" src="" alt="">
         </div>
     </body>
 </html>
