@@ -5,11 +5,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style type="text/css">
-            #canvas {border:1px solid #000;}
+            #canvas {border:1px solid#000;}
             #playerwrapper {width:500px;font-size:1em;}
             .right {float:right;}
             .left {float:left;}
-            #player1, #player2 {font-weight:bold;}
+            #player1, #player2 {font-weight:bold;font-size:2em;}
         </style>
         <script type="text/javascript">
             'use strict';
@@ -176,11 +176,19 @@
                     //If player1 does not hit
                     if ((this.x)-(this.width/2)<=0) {
                         player2.give_score(10);
+                        player1.height-=10;
+                        if (player1.height<=0) {
+                            player1.game_over(this);
+                        }
                     }
 
                     //If player2 does not hit
                     if ((this.x)>=canvas.width-(this.width/2)) {
                         player1.give_score(10);
+                        player2.height-=10;
+                        if (player2.height<=0) {
+                            player2.game_over(this);
+                        }
                     }
 
                     if ((this.y)-(this.width/2)-Math.abs(this.ly)<=0 || (this.y)+(this.width/2)+Math.abs(this.ly*(1-this.friction))>canvas.height) {
@@ -343,6 +351,22 @@
                         console.log('Incorrect player given');
                     }
                 }
+
+                //obj refers to moving object (not player)
+                game_over(obj) {
+                    stop_game = true;
+                    if (this.playername === 'player1') {
+                        alert('GAME OVER! SPELARE2 vann!');
+                    }
+                    else {
+                        alert('GAME OVER! SPELARE1 vann!');
+                    }
+
+                    //Start new game automatically
+                    obj.x = canvas.width/2;
+                    obj.y = canvas.height/2;
+                    stop_game = false;
+                }
                 
             }                
 
@@ -353,10 +377,10 @@
                 
                 allshapes.push( new Circle('#00FA00',canvas.height/2, canvas.width/2,2 , 2, 10,10));
 
-                player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,100, 'w','s', 'player1');
+                player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,50, 'w','s', 'player1');
                 allshapes.push( player1 );
 
-                player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,100, 'p','l', 'player2');
+                player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,50, 'p','l', 'player2');
                 allshapes.push( player2 );
                 
                 //Create the actual gameloop
@@ -381,8 +405,8 @@
     <body onload="game_loop();">
         <h1>Mepong</h1>      
         <div id="playerwrapper">
-                <span class="playerwrapper right">Poäng: <span id="player2">0</span></span>        
-                <span class="playerwrapper left">Poäng: <span id="player1">0</span></span>        
+                <span class="right">SPELARE2 - Poäng: <span id="player2">0</span></span>        
+                <span class="left">SPELARE1 - Poäng: <span id="player1">0</span></span>        
         </div>
         <canvas id="canvas" width="500" height="400"></canvas>
     </body>
