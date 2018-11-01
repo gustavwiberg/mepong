@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>MePong - Pong influenced by the game of memory</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style type="text/css">
             #canvas {border:1px solid #000;}
             #playerwrapper {width:500px;font-size:1em;}
-            .playerwrapper {}
             .right {float:right;}
             .left {float:left;}
             #player1, #player2 {font-weight:bold;}
         </style>
         <script type="text/javascript">
-        'use strict';
+            'use strict';
             var graphic, canvas, allshapes = [];   
             var rqi; //Used for request animation frame
             var stop_game = false;
+            var player1 = 0, player2 = 0;
+            
 
             class Shape {
                 constructor(col='#000000', x=0,y=0,lx=5,ly=5,width=10,height=10) {
@@ -114,6 +115,7 @@
                     if (this.y<=0 || (this.y+this.height>=canvas.height)) {
                         this.ly = -this.ly*(1-this.friction);
                     }   
+
                     
                 }
                 
@@ -153,8 +155,6 @@
                 
             }
             
-
-            
             class Circle extends Shape {
                 draw_object(currentshape) {
                     graphic.fillStyle= currentshape.col;
@@ -171,6 +171,16 @@
 
                     if ((this.x)-(this.width/2)<=0 || (this.x)>canvas.width-(this.width/2)) {                        
                         this.lx = -this.lx*(1-this.friction);
+                    }
+                    
+                    //If player1 does not hit
+                    if ((this.x)-(this.width/2)<=0) {
+                        player2.give_score(10);
+                    }
+
+                    //If player2 does not hit
+                    if ((this.x)>=canvas.width-(this.width/2)) {
+                        player1.give_score(10);
                     }
 
                     if ((this.y)-(this.width/2)-Math.abs(this.ly)<=0 || (this.y)+(this.width/2)+Math.abs(this.ly*(1-this.friction))>canvas.height) {
@@ -213,7 +223,7 @@
             }
             
             class Player extends Shape { 
-                constructor(col='#000000', x=0,y=0,lx=1,ly=0,width=10,height=10, player_upchar = 'w', player_downchar = 's', player_name = '') {
+                constructor(col='#000000', x=0,y=0,lx=1,ly=0,width=10,height=10, player_upchar = 'w', player_downchar = 's', playername = '') {
                     super();
                     this.col = col;
                     this.x = x;
@@ -228,7 +238,7 @@
                     this.key_state = [false, false];
                     this.upchar = player_upchar;
                     this.downchar = player_downchar;
-                    this.playername = player_name;
+                    this.playername = playername;
                     var player_obj = this;
 
                     document.body.addEventListener('keydown',function(e) {
@@ -312,15 +322,7 @@
                                 else {
                                     obj.ly = Math.abs(obj.ly);
                                 }
-
                                 obj.lx = -(obj.lx);
-                                this.score+=10;
-                                if (this.playername == 'player1') {
-                                        document.getElementById('player1').innerHTML = this.score;
-                                }
-                                if (this.playername == 'player2') {
-                                    document.getElementById('player2').innerHTML = this.score;
-                                }
                                 return true;
                             }
                         }
@@ -328,6 +330,18 @@
                        
                     }
                     return false;
+                }
+
+                give_score(v) {
+                    this.score+=parseInt(v);
+                    var sc = this.score;
+                    var pn = this.playername;
+                    if (pn == 'player1' || pn == 'player2') {                        
+                        document.getElementById(pn).innerHTML = sc;
+                    }
+                    else {
+                        console.log('Incorrect player given');
+                    }
                 }
                 
             }                
@@ -339,10 +353,10 @@
                 
                 allshapes.push( new Circle('#00FA00',canvas.height/2, canvas.width/2,2 , 2, 10,10));
 
-                var player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,100, 'w','s', 'player1');
+                player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,100, 'w','s', 'player1');
                 allshapes.push( player1 );
 
-                var player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,100, 'p','l', 'player2');
+                player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,100, 'p','l', 'player2');
                 allshapes.push( player2 );
                 
                 //Create the actual gameloop
