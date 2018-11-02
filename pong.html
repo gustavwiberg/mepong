@@ -10,17 +10,20 @@
             .right {float:right;}
             .left {float:left;}
             #player1, #player2 {font-weight:bold;font-size:2em;}
-            #memory-part {margin-left:50px;position:relative;float:left;width:360px;height:100px;}
-            #memory-part img {position:relative;padding:0 10px;float:left;width:100px;height:100%;}
-            #user-images {}
+            #memory-part, #usermemory-part {font-size:24px;margin-left:50px;position:relative;float:left;width:360px;height:100px;}
+            #memory-part img, #usermemory-part .userimage {position:relative;padding:0 10px 10px;float:left;width:100px;height:100%;}
+            #memory-part #memory-timer {font-weight:bold;}
+            #start-game {display:none;}
         </style>
+
         <script type="text/javascript">
             'use strict';
             var graphic, canvas, allshapes = [];   
             var rqi; //Used for request animation frame
             var stop_game = true;
             var player1 = 0, player2 = 0;
-            
+            var seconds_left = 10;
+            var timeout_seconds;
 
             class Shape {
                 constructor(col='#000000', x=0,y=0,lx=5,ly=5,width=10,height=10) {
@@ -391,21 +394,27 @@
                 
 
                 //Get all images to change to random pic                
-                var all_random_pic = document.getElementsByClassName('randompic');
+                var all_random_pic = document.getElementsByClassName('randompic');                
                 for(var i=0;i<all_random_pic.length;i++) {
                     //Random between 1-10
                     var min = 1;
                     var max = 10;
                     var random_pic = Math.floor(Math.random() * (max - min)) + min; 
-
+                    
                     var p = all_random_pic[i];
                     p.setAttribute('src', 'pic' + random_pic + '.jpeg');
                 };
-                
-
+                                
+                //Show all images
+                var all_pics = document.getElementsByClassName('userimage');                
+                for(var i=0;i<all_pics.length;i++) {                   
+                    var p = all_pics[i];
+                    p.setAttribute('src', 'pic' + (i+1) + '.jpeg');
+                };
                 
                 //Create the actual gameloop
-                game_loop = function() {                       
+                game_loop = function() {       
+                    console.log('gameloop is active');                
                    graphic.clearRect(0, 0, canvas.width, canvas.height);
                    for(var i=0;i<allshapes.length;i++) {
                         var currentshape = allshapes[i];
@@ -416,9 +425,21 @@
                         rqi = requestAnimationFrame(game_loop);
                     }
                }
-               //Start game_loop
-               game_loop();
-              
+
+                timeout_seconds = setInterval(function() { 
+                    seconds_left--;
+                    document.getElementById('memory-timer').innerHTML = seconds_left;
+                    if (seconds_left <=0) {
+                        clearTimeout(timeout_seconds);
+                        seconds_left = 10;
+                        document.getElementById('memory-timer').innerHTML = 10;
+                        document.getElementById('memory-part').style.display = 'none';
+                        stop_game = false;
+                        //Start game_loop
+                        game_loop();
+                    }                    
+                }, 1000);
+
             }
             
         </script>
@@ -431,15 +452,23 @@
         </div>
         <canvas id="canvas" width="500" height="400"></canvas>
         <div id="memory-part">
-            <img class="randompic" src=" alt="">
+            Lägg dessa bilder på minnet!<br>
+            <img class="randompic" src=""" alt="">
             <img class="randompic" src="" alt="">
             <img class="randompic" src="" alt="">
+            Tid kvarstår: <span id="memory-timer">10</span>
         </div>
 
-        <div id="user-images">
-            <img class="userpic" src="" alt="">
-            <img class="userpic" src="" alt="">
-            <img class="userpic" src="" alt="">
-        </div>
+        <div id="usermemory-part">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+            <img class="userimage" src="" alt="">
+        </div>        
     </body>
 </html>
