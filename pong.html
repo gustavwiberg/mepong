@@ -236,6 +236,82 @@
                 }        
             }
             
+            class CustomImage extends Shape {
+                constructor(col='#000000', x=0,y=0,lx=1,ly=0,width=10,height=10, image_src = 'pic2.jpeg') {
+                    super();
+                    this.col = col;
+                    this.x = x;
+                    this.y = y;
+                    this.lx = lx;
+                    this.ly = ly;
+                    this.width = width;
+                    this.height = height;
+                    this.image_src = image_src;                    
+                }
+
+                draw_object(currentshape) {
+
+                    var image_shape=new Image();
+                    image_shape.src = currentshape.image_src;
+                    
+                    graphic.fillStyle= currentshape.col;
+                    graphic.beginPath();
+                    graphic.drawImage(image_shape, currentshape.x, currentshape.y, currentshape.width, currentshape.height);
+                    graphic.fill();
+                }
+
+                move() { 
+                    this.x+=this.lx;
+                    this.y+=this.ly;       
+                    this.ly+=this.gravity;                     
+                    this.collision_react();
+
+                    if (this.x <=0 || (this.x+this.width>=canvas.width)) {
+                        this.lx = -this.lx*(1-this.friction);
+                    }
+                    if (this.y<=0 || (this.y+this.height>=canvas.height)) {
+                        this.ly = -this.ly*(1-this.friction);
+                    }   
+
+                    
+                }
+                
+                collision_react() {
+                    var obj;
+                    for(var i=0;i<allshapes.length;i++) {
+                        obj = allshapes[i];
+                        if (this == obj) {break;}
+                                                
+                        //This square collides with another square
+                        if (obj instanceof Square) {
+                            if (this.squaresquare_collision(this,obj) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                obj.lx = -obj.lx*(1-this.friction);
+                                obj.ly = -obj.ly*(1-this.friction);
+                                return true;                                
+                            }
+                        }
+                        
+                        //This square collides with another circle
+                        if (obj instanceof Circle) {                        
+                            if (this.circlesquare_collision(obj, this) === true) {
+                                this.lx = -this.lx*(1-this.friction);
+                                this.ly = -this.ly*(1-this.friction);
+                                
+                                obj.lx = -obj.lx*(1-this.friction);
+                                obj.ly = -obj.ly*(1-this.friction);
+                                return true;
+                            }
+                        }
+                           
+                       
+                    }
+                    return false;
+                }
+                
+            }
+
             class Player extends Shape { 
                 constructor(col='#000000', x=0,y=0,lx=1,ly=0,width=10,height=10, player_upchar = 'w', player_downchar = 's', playername = '') {
                     super();
@@ -312,17 +388,37 @@
                         if (this == obj) {break;}
                                                 
                         //This square collides with another square
-                        if (obj instanceof Square) {                            
-                            if (this.squaresquare_collision(this,obj) === true) {
-                                if (obj.col == '#FF0000') {                                    
-                                    document.getElementById('playerwrapper').innerHTML = '<strong>GAME OVER</strong>';
-                                    cancelAnimationFrame(rqi);
+                        if (obj instanceof Square || obj instanceof CustomImage) {                            
+                            if (this.squaresquare_collision(this,obj) === true) {  
+                                
+                                //Check if correct image is stopped
+                                //obj = image to test with
+                                //If this is correct image, the 
+                                //the image should be somewhere
+                                var collision_correctimage = false;
+                                var current_selectedpics = document.getElementsByClassName('randompic');                
+                                for(var i=0;i<current_selectedpics.length;i++) {
+                                    var item_img = current_selectedpics[i].getAttribute('src');                                
+                                    console.log(item_img);
+                                    if (obj.image_src == item_img) {
+                                        collision_correctimage = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (collision_correctimage === false) {
+                                    alert('Krock med fel bild!!!');
+                                    //Minus points!!!
+                                }
+
+                                //Image bounces back at opposite direction
+                                if ( (obj.y+(obj.height/2)) < this.y+(this.height/2) ) {
+                                    obj.ly = -Math.abs(obj.ly);
                                 }
                                 else {
-                                    obj.ly = -(obj.ly);
-                                    obj.lx = -(obj.lx);                                    
-                                    stop_game = true;
+                                    obj.ly = Math.abs(obj.ly);
                                 }
+                                obj.lx = -(obj.lx);                                    
                                 return true;                                
                             }
                         }
@@ -383,7 +479,7 @@
                 canvas = document.getElementById('canvas');
                 graphic = canvas.getContext('2d');
                 
-                allshapes.push( new Circle('#00FA00',canvas.height/2, canvas.width/2,2 , 2, 10,10));
+                allshapes.push( new CustomImage('#00FA00',canvas.height/2, canvas.width/2,0.5 , 0.5, 50,50, 'pic3.jpeg'));
 
                 player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,50, 'w','s', 'player1');
                 allshapes.push( player1 );
