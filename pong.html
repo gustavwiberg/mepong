@@ -268,12 +268,25 @@
 
                     if (this.x <=0 || (this.x+this.width>=canvas.width)) {
                         this.lx = -this.lx*(1-this.friction);
+                        //Change image when collided with player
+                        var min = 1;
+                                var max = 10;
+                                var random_pic = Math.floor(Math.random() * (max - min)) + min;
+                                var randomized_pic = 'pic' + random_pic + '.jpeg';
+                                this.image_src = randomized_pic;
                     }
                     if (this.y<=0 || (this.y+this.height>=canvas.height)) {
                         this.ly = -this.ly*(1-this.friction);
+                        //Change image when collided with canvas borders
+                        this.change_randomizedimage();
                     }   
-
                     
+                }
+
+                change_randomizedimage(min=1, max=10) {
+                    var random_pic = Math.floor(Math.random() * (max - min)) + min;
+                    var randomized_pic = 'pic' + random_pic + '.jpeg';
+                    this.image_src = randomized_pic;                    
                 }
                 
                 collision_react() {
@@ -282,30 +295,43 @@
                         obj = allshapes[i];
                         if (this == obj) {break;}
                                                 
-                        //This square collides with another square
-                        if (obj instanceof Square) {
+                        //This square collides with a player
+                        if (obj instanceof Player) {
                             if (this.squaresquare_collision(this,obj) === true) {
+
+                                //Check if correct image is stopped
+                                //By correct image, it means an image 
+                                //that is included in the randomized images that
+                                //was shown before game started
+                                var collision_correctimage = false;
+                                var current_selectedpics = document.getElementsByClassName('randompic');                
+                                for(var i=0;i<current_selectedpics.length;i++) {
+                                    var item_img = current_selectedpics[i].getAttribute('src');                                
+                                    if (this.image_src == item_img) {
+                                        collision_correctimage = true;
+                                        break;
+                                    }
+                                }
+                                
+                                //Collision with an image that is not included
+                                //in the memory user part
+                                if (collision_correctimage === false) {
+                                    obj.height-=10;                                      
+                                    if (obj.height<=0) {
+                                        obj.game_over(this);
+                                    }        
+                                }
+
+                                //Change image when collided with player
+                                this.change_randomizedimage();
+
+                                //Change direction of image
                                 this.lx = -this.lx*(1-this.friction);
                                 this.ly = -this.ly*(1-this.friction);
-                                obj.lx = -obj.lx*(1-this.friction);
-                                obj.ly = -obj.ly*(1-this.friction);
+
                                 return true;                                
                             }
-                        }
-                        
-                        //This square collides with another circle
-                        if (obj instanceof Circle) {                        
-                            if (this.circlesquare_collision(obj, this) === true) {
-                                this.lx = -this.lx*(1-this.friction);
-                                this.ly = -this.ly*(1-this.friction);
-                                
-                                obj.lx = -obj.lx*(1-this.friction);
-                                obj.ly = -obj.ly*(1-this.friction);
-                                return true;
-                            }
-                        }
-                           
-                       
+                        }                       
                     }
                     return false;
                 }
@@ -388,28 +414,8 @@
                         if (this == obj) {break;}
                                                 
                         //This square collides with another square
-                        if (obj instanceof Square || obj instanceof CustomImage) {                            
+                        if (obj instanceof Square || obj instanceof CustomImage) {  
                             if (this.squaresquare_collision(this,obj) === true) {  
-                                
-                                //Check if correct image is stopped
-                                //obj = image to test with
-                                //If this is correct image, the 
-                                //the image should be somewhere
-                                var collision_correctimage = false;
-                                var current_selectedpics = document.getElementsByClassName('randompic');                
-                                for(var i=0;i<current_selectedpics.length;i++) {
-                                    var item_img = current_selectedpics[i].getAttribute('src');                                
-                                    console.log(item_img);
-                                    if (obj.image_src == item_img) {
-                                        collision_correctimage = true;
-                                        break;
-                                    }
-                                }
-                                
-                                if (collision_correctimage === false) {
-                                    alert('Krock med fel bild!!!');
-                                    //Minus points!!!
-                                }
 
                                 //Image bounces back at opposite direction
                                 if ( (obj.y+(obj.height/2)) < this.y+(this.height/2) ) {
@@ -479,16 +485,12 @@
                 canvas = document.getElementById('canvas');
                 graphic = canvas.getContext('2d');
                 
-                allshapes.push( new CustomImage('#00FA00',canvas.height/2, canvas.width/2,0.5 , 0.5, 50,50, 'pic3.jpeg'));
-
                 player1 = new Player('#FF0000',0, canvas.height/2,0,1,10,50, 'w','s', 'player1');
                 allshapes.push( player1 );
 
                 player2 = new Player('#00FF00',canvas.width-10, canvas.height/2,0,1,10,50, 'p','l', 'player2');
                 allshapes.push( player2 );
                 
-                
-
                 //Get all images to change to random pic                
                 var all_random_pic = document.getElementsByClassName('randompic');                
                 for(var i=0;i<all_random_pic.length;i++) {
@@ -501,6 +503,13 @@
                     p.setAttribute('src', 'pic' + random_pic + '.jpeg');
                 };
                                 
+                //Random between 1-10            
+                var min = 1;
+                var max = 10;
+                var random_pic = Math.floor(Math.random() * (max - min)) + min;
+                var randomized_pic = 'pic' + random_pic + '.jpeg';
+                allshapes.push( new CustomImage('#00FA00',canvas.height/2, canvas.width/2,1.5 , 1.5, 50,50, randomized_pic));
+
                 //Show all images
                 var all_pics = document.getElementsByClassName('userimage');                
                 for(var i=0;i<all_pics.length;i++) {                   
@@ -529,7 +538,6 @@
                         clearTimeout(timeout_seconds);
                         seconds_left = 10;
                         document.getElementById('memory-timer').innerHTML = 10;
-                        document.getElementById('memory-part').style.display = 'none';
                         stop_game = false;
                         //Start game_loop
                         game_loop();
@@ -555,16 +563,6 @@
             Tid kvarstår: <span id="memory-timer">10</span>
         </div>
 
-        <div id="usermemory-part">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-            <img class="userimage" src="" alt="">
-        </div>        
+        
     </body>
 </html>
